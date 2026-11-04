@@ -35,7 +35,7 @@ export default function Focus() {
       <Animated.View entering={FadeInDown.duration(400)}>
         <Card style={{ alignItems: 'center', paddingTop: spacing.md }}>
           <View style={[styles.stage, { backgroundColor: m.accentSoft }]}>
-            <MascotArt mascot={m} size={150} />
+            <MascotArt mascot={m} size={150} ambient interactive />
           </View>
           <T style={styles.time}>{minutes}</T>
           <T variant="subhead" color={colors.inkMute} style={{ marginTop: -4 }}>

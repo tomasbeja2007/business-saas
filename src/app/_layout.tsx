@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { syncRoutineNotifications } from '../lib/notifications';
 import { useApp } from '../store/useApp';
 import { colors } from '../theme/tokens';
 
@@ -33,6 +34,22 @@ export default function RootLayout() {
     }, 1500);
     return () => clearTimeout(t);
   }, []);
+
+  const onboarded = useApp((s) => s.onboarded);
+  const settings = useApp((s) => s.settings);
+  const mascotId = useApp((s) => s.mascotId);
+  const name = useApp((s) => s.name);
+  useEffect(() => {
+    if (!hydrated) return;
+    syncRoutineNotifications({
+      enabled: onboarded && settings.notifications,
+      dailyReport: settings.dailyReport,
+      windDown: settings.windDown,
+      bedtime: settings.bedtime,
+      mascotId,
+      name,
+    });
+  }, [hydrated, onboarded, settings.notifications, settings.dailyReport, settings.windDown, settings.bedtime, mascotId, name]);
 
   if (!ready) return null;
 

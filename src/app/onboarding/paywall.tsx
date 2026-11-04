@@ -43,7 +43,7 @@ export default function Paywall() {
           <IconButton icon="close" label="Close" bg="#ffffff99" color={colors.inkSoft} size={34} onPress={() => start(plan)} />
         </View>
         <View style={{ alignItems: 'center', marginTop: -spacing.md }}>
-          <MascotArt mascot={m} size={150} />
+          <MascotArt mascot={m} size={150} ambient face="joy" />
         </View>
         <View style={{ paddingHorizontal: spacing.xl }}>
           <T variant="largeTitle" align="center">

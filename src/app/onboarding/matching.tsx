@@ -51,7 +51,7 @@ export default function Matching() {
         <View style={styles.inner}>
           <Animated.View key={m.id} entering={ZoomIn.duration(220)} style={StyleSheet.absoluteFill}>
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <MascotArt mascot={m} size={170} float={false} shadow={false} />
+              <MascotArt mascot={m} size={170} shadow={false} />
             </View>
           </Animated.View>
         </View>

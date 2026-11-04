@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { TabScreen } from '../../components/TabScreen';
 import { Card, IconButton, ProgressBar, SectionHeader, Squish, T } from '../../components/ui';
-import { AppIcon, MascotArt } from '../../components/visuals';
+import { LivingMascot, type MascotHandle } from '../../components/LivingMascot';
+import { AppIcon, MascotAvatar } from '../../components/visuals';
 import { greeting, useBuddy, useUsage } from '../../lib/hooks';
 import { moodFor } from '../../lib/mood';
 import { dayKey, formatMinutes } from '../../lib/usage';
@@ -25,6 +27,15 @@ export default function Today() {
   const left = goal - today.total;
   const streak = activeDayStreak(sessions, challengesDone);
   const doneToday = challengesDone[dayKey(new Date())] ?? [];
+  const buddy = useRef<MascotHandle>(null);
+
+  // Say hello with today's mood when the screen opens.
+  useEffect(() => {
+    const t = setTimeout(() => buddy.current?.react(mood.face, { hop: true }), 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m.id]);
+
   const date = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
@@ -46,13 +57,13 @@ export default function Today() {
               {left >= 0 ? `${formatMinutes(left)} left of ${formatMinutes(goal, true)}` : `${formatMinutes(-left)} over your ${formatMinutes(goal, true)} goal`}
             </T>
             <View style={[styles.moodPill, { backgroundColor: '#ffffffb3' }]}>
-              <T style={{ fontSize: 14 }}>{mood.emoji}</T>
+              <MascotAvatar mascot={m} size={22} face={mood.face} />
               <T variant="caption" color={mood.color} style={{ fontFamily: 'Nunito_800ExtraBold' }}>
                 {m.name} is {mood.label.toLowerCase()}
               </T>
             </View>
           </View>
-          <MascotArt mascot={m} size={138} style={{ marginRight: -spacing.sm, marginTop: -spacing.xs }} />
+          <LivingMascot ref={buddy} mascot={m} size={138} ambient interactive emoteSide="left" style={{ marginRight: -spacing.sm, marginTop: -spacing.xs }} />
         </View>
         <View style={{ marginTop: spacing.md }}>
           <ProgressBar progress={today.total / goal} color={left >= 0 ? m.accent : colors.danger} track="#ffffff99" height={10} />
@@ -110,7 +121,10 @@ export default function Today() {
           return (
             <Squish
               key={c.id}
-              onPress={() => toggleChallenge(c.id, c.xp)}
+              onPress={() => {
+                toggleChallenge(c.id, c.xp);
+                if (!done) buddy.current?.react('joy', { hearts: true });
+              }}
               hapticStyle={done ? 'tap' : 'success'}
               scaleTo={0.985}
               style={[styles.challenge, i < m.challenges.length - 1 && styles.divider]}

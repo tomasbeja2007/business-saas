@@ -40,7 +40,8 @@
           "imageWidth": 160,
           "backgroundColor": "#F7F4EF"
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

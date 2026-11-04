@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModalHeader } from '../components/ModalHeader';
 import { Squish, T } from '../components/ui';
-import { MascotArt } from '../components/visuals';
+import { LivingMascot, type MascotHandle } from '../components/LivingMascot';
 import { mascotList } from '../data/mascots';
 import { haptic } from '../lib/haptics';
 import { useApp } from '../store/useApp';
@@ -15,6 +16,7 @@ export default function ChooseBuddy() {
   const insets = useSafeAreaInsets();
   const current = useApp((s) => s.mascotId);
   const setMascot = useApp((s) => s.setMascot);
+  const refs = useRef<Partial<Record<string, MascotHandle | null>>>({});
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -28,14 +30,17 @@ export default function ChooseBuddy() {
               hapticStyle="none"
               onPress={() => {
                 haptic.success();
-                setMascot(m.id);
-                setTimeout(() => router.back(), 250);
+                refs.current[m.id]?.spin();
+                setTimeout(() => {
+                  setMascot(m.id);
+                  router.back();
+                }, 650);
               }}
               style={[styles.card, on && { borderColor: m.accent }]}
               accessibilityState={{ selected: on }}
             >
               <LinearGradient colors={m.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-              <MascotArt mascot={m} size={104} float={false} shadow={false} />
+              <LivingMascot ref={(r) => { refs.current[m.id] = r; }} mascot={m} size={104} shadow={false} />
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <View style={[styles.icon, { backgroundColor: m.accentSoft }]}>

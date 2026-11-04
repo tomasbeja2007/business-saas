@@ -6,7 +6,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, T } from '../components/ui';
-import { AppIcon, MascotArt, Ring } from '../components/visuals';
+import { LivingMascot, type MascotHandle } from '../components/LivingMascot';
+import { AppIcon, Ring } from '../components/visuals';
+import { cancelFocusEnd, scheduleFocusEnd } from '../lib/notifications';
 import { APPS } from '../data/apps';
 import { haptic } from '../lib/haptics';
 import { useBuddy } from '../lib/hooks';
@@ -31,6 +33,26 @@ export default function FocusSession() {
   const [phase, setPhase] = useState<Phase>('running');
   const lastTick = useRef(Date.now());
   const saved = useRef(false);
+  const celebrate = useRef<MascotHandle>(null);
+
+  // A notification fires when the session ends, even if the app is in the background.
+  useEffect(() => {
+    if (phase === 'running') scheduleFocusEnd(total - elapsed, m.id, label);
+    else cancelFocusEnd();
+    // Only reschedule when the phase changes, not on every tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+  useEffect(() => () => void cancelFocusEnd(), []);
+
+  useEffect(() => {
+    if (phase !== 'done' && phase !== 'ended') return;
+    const t = setTimeout(() => (phase === 'done' ? celebrate.current?.spin() : celebrate.current?.react('happy')), 450);
+    const u = setTimeout(() => celebrate.current?.react(phase === 'done' ? 'joy' : 'happy', { hearts: phase === 'done', hop: false }), 1100);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(u);
+    };
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'running') return;
@@ -71,7 +93,7 @@ export default function FocusSession() {
         <LinearGradient colors={[m.gradient[0], colors.canvas]} style={StyleSheet.absoluteFill} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }}>
           <Animated.View entering={ZoomIn.springify().damping(10)}>
-            <MascotArt mascot={m} size={220} />
+            <LivingMascot ref={celebrate} mascot={m} size={220} ambient interactive />
           </Animated.View>
           <Animated.View entering={FadeInDown.delay(200)} style={{ alignItems: 'center' }}>
             <T variant="largeTitle" align="center" style={{ marginTop: spacing.lg }}>
@@ -122,7 +144,7 @@ export default function FocusSession() {
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Ring size={290} stroke={12} progress={elapsed / total} color={m.accent} colorEnd="#fff" track="rgba(255,255,255,0.1)">
           <View style={{ alignItems: 'center' }}>
-            <MascotArt mascot={m} size={130} float={phase === 'running'} shadow={false} />
+            <LivingMascot mascot={m} size={130} float={phase === 'running'} shadow={false} ambient={phase === 'running'} face={phase === 'paused' || phase === 'confirmEnd' ? 'surprised' : 'focused'} />
             {/* Long-press the timer to skip ahead (handy for demos & store screenshots). */}
             <Pressable onLongPress={() => setElapsed(total - 3)} delayLongPress={1200} accessibilityLabel="Time remaining">
               <T variant="timer" color="#fff" style={{ fontSize: 54, lineHeight: 60 }}>

@@ -2,77 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, Ellipse, RadialGradient, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
+import { StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedProps, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import type { TrackedApp } from '../data/apps';
 import type { Mascot } from '../data/mascots';
+import { faceFor, type FaceKey } from '../data/mascotArt';
+import { LivingMascot } from './LivingMascot';
 import { colors } from '../theme/tokens';
 import { T } from './ui';
 
-/** Mascot artwork with a gentle idle "breathing" bob and soft ground shadow. */
-export function MascotArt({
-  mascot,
-  size = 200,
-  float = true,
-  shadow = true,
-  style,
-}: {
-  mascot: Mascot;
-  size?: number;
-  float?: boolean;
-  shadow?: boolean;
-  style?: StyleProp<ViewStyle>;
-}) {
-  const y = useSharedValue(0);
-  useEffect(() => {
-    if (!float) return;
-    y.value = withRepeat(
-      withSequence(
-        withTiming(-size * 0.03, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-    );
-  }, [float, size, y]);
-  const bob = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
-  const shadowStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: 1 + y.value / (size * 0.15) }],
-    opacity: 0.6 + y.value / (size * 0.08),
-  }));
-  return (
-    <View style={[{ width: size, height: size * 1.04, alignItems: 'center' }, style]}>
-      {shadow && (
-        <Animated.View style={[{ position: 'absolute', bottom: 0, width: size * 0.7, height: size * 0.1 }, shadowStyle]}>
-          <Svg width="100%" height="100%" viewBox="0 0 100 20" preserveAspectRatio="none">
-            <Defs>
-              <RadialGradient id={`sh-${mascot.id}`} cx="50%" cy="50%" rx="50%" ry="50%">
-                <Stop offset="0" stopColor={mascot.accentDeep} stopOpacity={0.55} />
-                <Stop offset="1" stopColor={mascot.accentDeep} stopOpacity={0} />
-              </RadialGradient>
-            </Defs>
-            <Ellipse cx="50" cy="10" rx="50" ry="10" fill={`url(#sh-${mascot.id})`} />
-          </Svg>
-        </Animated.View>
-      )}
-      <Animated.View style={bob}>
-        <Image source={mascot.image} style={{ width: size, height: size }} contentFit="contain" transition={200} />
-      </Animated.View>
-    </View>
-  );
-}
+/** Mascot artwork that breathes, sways and reacts. See LivingMascot for the full API. */
+export const MascotArt = LivingMascot;
 
-/** Circular avatar: mascot on its soft gradient. */
-export function MascotAvatar({ mascot, size = 48, ring }: { mascot: Mascot; size?: number; ring?: boolean }) {
+/** Circular avatar: the buddy's face (expression) on its soft gradient. */
+export function MascotAvatar({ mascot, size = 48, ring, face = 'happy' }: { mascot: Mascot; size?: number; ring?: boolean; face?: FaceKey }) {
   return (
     <View
       style={{
@@ -82,10 +26,12 @@ export function MascotAvatar({ mascot, size = 48, ring }: { mascot: Mascot; size
         overflow: 'hidden',
         borderWidth: ring ? 2 : 0,
         borderColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <LinearGradient colors={mascot.gradient} style={StyleSheet.absoluteFill} />
-      <Image source={mascot.image} style={{ width: size * 1.05, height: size * 1.05, marginLeft: -size * 0.025, marginTop: size * 0.04 }} contentFit="contain" />
+      <Image source={faceFor(mascot.id, face)} style={{ width: size * 0.86, height: size * 0.86 }} contentFit="contain" />
     </View>
   );
 }

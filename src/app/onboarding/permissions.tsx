@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { OnboardingShell } from '../../components/OnboardingShell';
 import { Button, T } from '../../components/ui';
-import { MascotArt } from '../../components/visuals';
+import { LivingMascot, type MascotHandle } from '../../components/LivingMascot';
+import { requestNotificationPermission } from '../../lib/notifications';
 import { useBuddy } from '../../lib/hooks';
 import { haptic } from '../../lib/haptics';
 import { useApp } from '../../store/useApp';
@@ -54,6 +56,26 @@ export default function Permissions() {
   const settings = useApp((s) => s.settings);
   const update = useApp((s) => s.updateSettings);
   const allGranted = settings.screenTimeConnected && settings.notifications;
+  const buddy = useRef<MascotHandle>(null);
+  const [denied, setDenied] = useState(false);
+
+  const allowScreenTime = () => {
+    haptic.success();
+    update({ screenTimeConnected: true });
+    buddy.current?.react('joy');
+  };
+  const allowNotifications = async () => {
+    const ok = await requestNotificationPermission();
+    update({ notifications: ok });
+    setDenied(!ok);
+    if (ok) {
+      haptic.success();
+      buddy.current?.react('joy', { hearts: true });
+    } else {
+      buddy.current?.react('surprised');
+    }
+    return ok;
+  };
 
   return (
     <OnboardingShell
@@ -61,13 +83,15 @@ export default function Permissions() {
       accent={m.accent}
       footer={
         <>
-          <Button title={allGranted ? 'Continue' : 'Allow all & continue'} color={m.accent} onPress={() => {
-            if (!allGranted) {
-              update({ screenTimeConnected: true, notifications: true });
-              haptic.success();
-            }
-            router.push('/onboarding/paywall');
-          }} />
+          <Button
+            title={allGranted ? 'Continue' : 'Allow all & continue'}
+            color={m.accent}
+            onPress={async () => {
+              if (!settings.screenTimeConnected) allowScreenTime();
+              if (!settings.notifications && !denied) await allowNotifications();
+              router.push('/onboarding/paywall');
+            }}
+          />
           {!allGranted && (
             <Button title="Not now" variant="ghost" size="md" color={colors.inkMute} onPress={() => router.push('/onboarding/paywall')} />
           )}
@@ -75,7 +99,7 @@ export default function Permissions() {
       }
     >
       <View style={{ alignItems: 'center', marginTop: spacing.md }}>
-        <MascotArt mascot={m} size={150} />
+        <LivingMascot ref={buddy} mascot={m} size={150} ambient />
       </View>
       <T variant="largeTitle" align="center" style={{ marginTop: spacing.md }}>
         Let {m.name} help
@@ -89,22 +113,16 @@ export default function Permissions() {
           title="Screen Time access"
           body="See your usage and set app limits."
           granted={settings.screenTimeConnected}
-          onAllow={() => {
-            haptic.success();
-            update({ screenTimeConnected: true });
-          }}
+          onAllow={allowScreenTime}
           accent={m.accent}
           delay={100}
         />
         <PermissionCard
           icon="notifications"
           title="Notifications"
-          body={`Gentle nudges and cheers from ${m.name}.`}
+          body={denied ? 'Turned off. You can enable it later in iOS Settings.' : `Gentle nudges and cheers from ${m.name}.`}
           granted={settings.notifications}
-          onAllow={() => {
-            haptic.success();
-            update({ notifications: true });
-          }}
+          onAllow={() => void allowNotifications()}
           accent={m.accent}
           delay={200}
         />

@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, T } from '../../components/ui';
-import { MascotArt } from '../../components/visuals';
+import { LivingMascot, type MascotHandle } from '../../components/LivingMascot';
+import { FACE_KEYS } from '../../data/mascotArt';
 import { MASCOTS } from '../../data/mascots';
 import { colors, spacing } from '../../theme/tokens';
 
@@ -21,6 +23,21 @@ export default function Welcome() {
   const { width } = useWindowDimensions();
   const w = Math.min(width, 440);
   const stage = w * 0.95;
+  const refs = useRef<Partial<Record<string, MascotHandle | null>>>({});
+
+  // The buddies take turns reacting, like they're chatting with each other.
+  useEffect(() => {
+    const order = ['byte', 'volt', 'momo', 'sage', 'oak'];
+    let i = 0;
+    const t = setInterval(() => {
+      const id = order[i % order.length];
+      const face = FACE_KEYS[(i * 3 + 1) % FACE_KEYS.length];
+      if (i % 4 === 3) refs.current[id]?.spin();
+      else refs.current[id]?.react(face, { hold: 1500 });
+      i++;
+    }, 1400);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -44,7 +61,7 @@ export default function Welcome() {
                 entering={FadeInUp.delay(c.d).springify().damping(14)}
                 style={{ position: 'absolute', left: c.cx * stage - size / 2, top: c.y * stage, zIndex: c.id === 'byte' ? 2 : 1 }}
               >
-                <MascotArt mascot={MASCOTS[c.id]} size={size} shadow={false} />
+                <LivingMascot ref={(r) => { refs.current[c.id] = r; }} mascot={MASCOTS[c.id]} size={size} shadow={false} interactive />
               </Animated.View>
             );
           })}

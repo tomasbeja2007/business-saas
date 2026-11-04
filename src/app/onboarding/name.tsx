@@ -27,7 +27,7 @@ export default function NameStep() {
       footer={<Button title="Continue" onPress={next} disabled={!valid} />}
     >
       <View style={{ alignItems: 'center', marginTop: spacing.lg }}>
-        <MascotArt mascot={MASCOTS.byte} size={150} />
+        <MascotArt mascot={MASCOTS.byte} size={150} ambient face={name.trim() ? 'joy' : 'happy'} />
         <View style={styles.bubble}>
           <T variant="headline" align="center">
             Hi there! 👋 Before we start…

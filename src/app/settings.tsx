@@ -9,6 +9,7 @@ import { Button, Card, Row, Squish, T, ToggleRow } from '../components/ui';
 import { MascotAvatar } from '../components/visuals';
 import { FREE_EARLY_ACCESS, PLANS } from '../data/plans';
 import { useBuddy } from '../lib/hooks';
+import { requestNotificationPermission } from '../lib/notifications';
 import { formatMinutes } from '../lib/usage';
 import { useApp } from '../store/useApp';
 import { colors, fonts, radius, spacing } from '../theme/tokens';
@@ -33,6 +34,7 @@ export default function Settings() {
   const m = useBuddy();
   const s = useApp();
   const [confirmReset, setConfirmReset] = useState(false);
+  const [notifDenied, setNotifDenied] = useState(false);
   const plan = PLANS.find((p) => p.id === s.plan);
   const nextBedtime = () => {
     const i = BEDTIMES.indexOf(s.settings.bedtime);
@@ -87,12 +89,17 @@ export default function Settings() {
         </Group>
 
         <Group title="Notifications">
-          <ToggleRow icon="notifications" iconBg="#FDEEDF" iconColor="#D26A17" title="Nudges from your buddy" value={s.settings.notifications} onChange={(v) => s.updateSettings({ notifications: v })} accent={m.accent} />
-          <ToggleRow icon="document-text" iconBg="#E8EEFB" iconColor="#3F62B8" title="Daily report" subtitle="Every evening at 21:00" value={s.settings.dailyReport} onChange={(v) => s.updateSettings({ dailyReport: v })} accent={m.accent} last />
+          <ToggleRow icon="notifications" iconBg="#FDEEDF" iconColor="#D26A17" title="Nudges from your buddy" subtitle={notifDenied ? 'Allow Lumi in iOS Settings › Notifications' : undefined} value={s.settings.notifications} onChange={async (v) => {
+            if (!v) return s.updateSettings({ notifications: false });
+            const ok = await requestNotificationPermission();
+            setNotifDenied(!ok);
+            s.updateSettings({ notifications: ok });
+          }} accent={m.accent} />
+          <ToggleRow icon="document-text" iconBg="#E8EEFB" iconColor="#3F62B8" title="Daily report" subtitle="Every evening at 21:00" value={s.settings.notifications && s.settings.dailyReport} onChange={(v) => s.updateSettings({ dailyReport: v })} accent={m.accent} last />
         </Group>
 
         <Group title="Wind down">
-          <ToggleRow icon="moon" iconBg="#E9ECFA" iconColor="#5260AE" title="Wind-down mode" subtitle="Quiet apps before bed" value={s.settings.windDown} onChange={(v) => s.updateSettings({ windDown: v })} accent={m.accent} />
+          <ToggleRow icon="moon" iconBg="#E9ECFA" iconColor="#5260AE" title="Wind-down mode" subtitle={`Reminder 30 min before ${s.settings.bedtime}`} value={s.settings.windDown} onChange={(v) => s.updateSettings({ windDown: v })} accent={m.accent} />
           <Row icon="bed" iconBg="#E9ECFA" iconColor="#5260AE" title="Bedtime" value={s.settings.bedtime} onPress={nextBedtime} last />
         </Group>
 

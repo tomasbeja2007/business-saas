@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Pill, Squish, T } from '../../components/ui';
-import { MascotArt, MascotAvatar } from '../../components/visuals';
+import { LivingMascot, type MascotHandle } from '../../components/LivingMascot';
+import { MascotAvatar } from '../../components/visuals';
 import { MASCOTS, mascotList } from '../../data/mascots';
 import { haptic } from '../../lib/haptics';
 import { matchBuddy } from '../../lib/match';
@@ -22,6 +23,17 @@ export default function Reveal() {
   const name = useApp((s) => s.name);
   const [showAll, setShowAll] = useState(false);
   const m = MASCOTS[mascotId];
+  const buddy = useRef<MascotHandle>(null);
+
+  // Arrive with a full 360° turn, then a big happy face.
+  useEffect(() => {
+    const a = setTimeout(() => buddy.current?.spin(), 350);
+    const b = setTimeout(() => buddy.current?.react('joy', { hearts: true, hop: false }), 1100);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [mascotId]);
   const result = matchBuddy(answers);
   const isMatch = result.winner === mascotId;
   const reasons = isMatch && result.reasons.length ? result.reasons : m.traits.map((t) => `You’ll love a ${t.toLowerCase()} companion`);
@@ -38,7 +50,7 @@ export default function Reveal() {
         </Animated.View>
 
         <Animated.View key={m.id} entering={ZoomIn.springify().damping(12)} style={{ alignItems: 'center', marginTop: spacing.sm }}>
-          <MascotArt mascot={m} size={250} />
+          <LivingMascot ref={buddy} mascot={m} size={250} ambient interactive />
         </Animated.View>
 
         <Animated.View key={`${m.id}-t`} entering={FadeInDown.delay(250).duration(450)} style={{ alignItems: 'center' }}>
