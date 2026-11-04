@@ -26,6 +26,14 @@ export default function RootLayout() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
+  // If storage is unavailable (private mode, blocked site data) rehydration may never report back.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!useApp.getState().hydrated) useApp.setState({ hydrated: true });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, []);
+
   if (!ready) return null;
 
   return (
